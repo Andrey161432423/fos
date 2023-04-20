@@ -46,6 +46,11 @@ python manage.py collectstatic
 python manage.py createsuperuser
 ```
 
+*(Необязательно) Заполнение базы данных значениями по-умолчанию:*
+```
+python manage.py seed
+```
+
 ### 4. Запуск.
 
 Запускаем веб-сервер Django через команду:

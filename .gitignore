@@ -109,3 +109,5 @@ project/static/
 *.pid
 
 .idea
+
+project/app/migrations/
