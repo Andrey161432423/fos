@@ -36,6 +36,8 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    "admin_interface",
+    "colorfield",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -45,7 +47,7 @@ INSTALLED_APPS = [
     "app.apps.AppConfig",
     'django_dump_die',
     'adminfilters',
-    'django_cleanup.apps.CleanupConfig',
+    'django_cleanup.apps.CleanupSelectedConfig',
     'nested_admin',
 ]
 

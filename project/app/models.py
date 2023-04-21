@@ -3,6 +3,7 @@ from django.core.validators import FileExtensionValidator
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
+from django_cleanup import cleanup
 
 
 # валидация размера файла
@@ -106,6 +107,7 @@ class Fos(models.Model):
         verbose_name_plural = 'ФОСы'
 
 
+@cleanup.select
 class Document(models.Model):
     """
         Модель "Загружаемый документ"

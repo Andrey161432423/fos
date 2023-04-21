@@ -1,10 +1,19 @@
-# Цифровой фонд оценочных средств для кафедры ВУЗа
+<table cellspacing="0" cellpadding="0" style="border:none">
+<tr style="border: none">
+<td style="border: none" width="75%"><h1>Цифровой фонд оценочных средств для кафедры ВУЗа</h1></td>
+<td style="border: none"><img src="https://rsue.ru/bitrix/templates/info_light_blue/img/logo.svg" width="200" height="200" />
+</td>
+</tr>
+</table>
+<hr>
 
 ## Требования
 - [Python 3.9.x](https://www.python.org/downloads/)
 - [Git](https://git-scm.com)
 
-## Деплой проекта
+## Установка проекта
+
+> Выполняется **один раз** при первом развертывании проекта в заданной среде.
 
 ### 1. Склонировать репозиторий. 
 ```
@@ -23,7 +32,7 @@ python -m venv venv
 ```
 pip install -r requirements.txt
 ```
-### 3. Настройка проекта (миграции, статичные файлы).
+### 3. Настройка проекта (миграции, статичные файлы, тема).
 
 Переходим в папку приложения.
 ```
@@ -34,6 +43,11 @@ cd project
 ```
 python manage.py makemigrations
 python manage.py migrate
+```
+
+Импортируем настройки темы оформления:
+```
+python manage.py loaddata theme.json
 ```
 
 Генерируем статичные файлы:
@@ -51,7 +65,41 @@ python manage.py createsuperuser
 python manage.py seed
 ```
 
-### 4. Запуск.
+## Деплой проекта
+
+> Выполняется **постоянно** при получении новых изменений
+
+### 1. Виртуальная среда
+
+Находясь в папке с проектом активируем виртуальную среду:
+```
+.\venv\Scripts\activate
+```
+
+Подгружаем зависимости проекта (пакеты):
+```
+pip install -r requirements.txt
+```
+
+### 2. Миграции и статика
+
+Переходим в папку приложения.
+```
+cd project
+```
+
+Генерируем и применяем миграции:
+```
+python manage.py makemigrations
+python manage.py migrate
+```
+
+Генерируем статичные файлы:
+```
+python manage.py collectstatic
+```
+
+### 3. Запуск.
 
 Запускаем веб-сервер Django через команду:
 ```

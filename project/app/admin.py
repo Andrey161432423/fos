@@ -77,7 +77,6 @@ class FosAdminInline(nested_admin.NestedStackedInline):
 class DisciplineAdmin(nested_admin.NestedModelAdmin):
     list_display = ('name', 'type', 'created_at', 'updated_at')
     list_display_links = ('name', )
-    exclude = ['user']
     search_fields = ['name', 'fos__document__name', 'fos__name']
     inlines = [FosAdminInline]
     list_filter = ['type']
@@ -95,3 +94,14 @@ class DisciplineAdmin(nested_admin.NestedModelAdmin):
     def changelist_view(self, request, extra_context=None):
         extra_context = {'title': 'Список учебных дисциплин'}
         return super(DisciplineAdmin, self).changelist_view(request, extra_context=extra_context)
+
+    def get_form(self, request, obj=None, **kwargs):
+        if not request.user.is_superuser:
+            self.exclude = ['user']
+
+        return super(DisciplineAdmin, self).get_form(request, obj, **kwargs)
+
+    def get_list_display(self, request):
+        if request.user.is_superuser:
+            return ('name', 'type', 'user', 'created_at', 'updated_at')
+        return ('name', 'type', 'created_at', 'updated_at')

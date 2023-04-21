@@ -102,7 +102,7 @@ ENV/
 
 .DS_Store
 *.sqlite3
-media/
+project/media/documents
 project/static/
 *.pyc
 *.db
