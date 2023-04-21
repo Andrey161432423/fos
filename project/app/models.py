@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import FileExtensionValidator
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import User
 
 
 # валидация размера файла
@@ -33,6 +34,51 @@ class FosType(models.Model):
         verbose_name_plural = 'Типы ФОСов'
 
 
+class DisciplineType(models.Model):
+    """
+    Модель "Тип учебных дисциплин (экзамен, зачет, диф.зачет, ...)"
+
+    Attributes:
+        name: Название
+        created_at: Дата создания
+        updated_at: дата изменения
+    """
+    name = models.CharField(max_length=255, verbose_name='Наименование')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Тип дисциплины'
+        verbose_name_plural = 'Типы дисциплин'
+
+
+class Discipline(models.Model):
+    """
+    Модель "Учебная дисциплина"
+
+    Attributes:
+        name: Название
+        type: Форма контроля знаний
+        created_at: Дата создания
+        updated_at: дата изменения
+    """
+    name = models.CharField(max_length=255, verbose_name='Наименование')
+    type = models.ForeignKey(DisciplineType, on_delete=models.PROTECT, verbose_name='Форма контроля знаний')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Пользователь')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Дисциплина'
+        verbose_name_plural = 'Дисциплины'
+
+
 class Fos(models.Model):
     """
         Модель "ФОС (фонд оценочных средств)"
@@ -41,12 +87,14 @@ class Fos(models.Model):
             name: Название
             description: Описание
             type: Тип ФОСа
+            discipline: Дисциплина
             created_at: Дата создания
             updated_at: дата изменения
         """
     name = models.CharField(max_length=255, verbose_name='Наименование')
     description = models.TextField(verbose_name='Описание', blank=True, null=True)
     type = models.ForeignKey(FosType, on_delete=models.PROTECT, verbose_name='Тип')
+    discipline = models.ForeignKey(Discipline, on_delete=models.PROTECT, verbose_name='Дисциплина')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
 
@@ -73,7 +121,7 @@ class Document(models.Model):
     path = models.FileField(upload_to='documents/', blank=True, null=True, verbose_name='Документ', validators=[
         FileExtensionValidator(settings.ALLOWED_FILE_UPLOAD_EXTENSIONS), validate_file_size
     ], help_text='Допустимые расширения: ' + ', '.join(settings.ALLOWED_FILE_UPLOAD_EXTENSIONS))
-    fos = models.ForeignKey(Fos, on_delete=models.PROTECT, verbose_name='ФОС')
+    fos = models.ForeignKey(Fos, on_delete=models.CASCADE, verbose_name='ФОС')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
 
@@ -83,5 +131,3 @@ class Document(models.Model):
     class Meta:
         verbose_name = 'Документ'
         verbose_name_plural = 'Документы'
-
-

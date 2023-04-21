@@ -44,7 +44,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "app.apps.AppConfig",
     'django_dump_die',
-    'adminfilters'
+    'adminfilters',
+    'django_cleanup.apps.CleanupConfig',
+    'nested_admin',
 ]
 
 MIDDLEWARE = [
