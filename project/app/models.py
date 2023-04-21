@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MinValueValidator, MaxValueValidator
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
@@ -63,12 +63,13 @@ class Discipline(models.Model):
     Attributes:
         name: Название
         type: Форма контроля знаний
+        user: Преподаватель
         created_at: Дата создания
         updated_at: дата изменения
     """
     name = models.CharField(max_length=255, verbose_name='Наименование')
     type = models.ForeignKey(DisciplineType, on_delete=models.PROTECT, verbose_name='Форма контроля знаний')
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Пользователь')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Преподаватель')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
 
@@ -78,6 +79,32 @@ class Discipline(models.Model):
     class Meta:
         verbose_name = 'Дисциплина'
         verbose_name_plural = 'Дисциплины'
+
+
+class Group(models.Model):
+    """
+    Модель "Учебная группа"
+
+    Attributes:
+        name: Название
+        course: Номер курса
+        created_at: Дата создания
+        updated_at: дата изменения
+    """
+    name = models.CharField(max_length=255, verbose_name='Наименование')
+    course = models.IntegerField(verbose_name='Курс', default=1, validators=[
+        MinValueValidator(1), MaxValueValidator(10)
+    ])
+    disciplines = models.ManyToManyField(Discipline, verbose_name='Учебные дисциплины', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Учебная группа'
+        verbose_name_plural = 'Учебные группы'
 
 
 class Fos(models.Model):
