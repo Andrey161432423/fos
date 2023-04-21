@@ -65,7 +65,7 @@ python manage.py createsuperuser
 python manage.py seed
 ```
 
-## Деплой проекта
+## Запуск приложения
 
 > Выполняется **постоянно** при получении новых изменений
 
