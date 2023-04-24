@@ -54,8 +54,9 @@ class FosAdmin(AdminFiltersMixin, admin.ModelAdmin):
         links = ''
         i = 0
         for doc in Document.objects.filter(fos=obj):
-            i += 1
-            links += ('<a href="'+doc.path.url+'">'+str(i)+'. '+doc.name+'</a></br>')
+            if doc.path:
+                i += 1
+                links += ('<a href="'+doc.path.url+'">'+str(i)+'. '+doc.name+'</a></br>')
         if not links:
             return '-'
         return mark_safe(links)

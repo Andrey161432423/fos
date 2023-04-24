@@ -148,4 +148,6 @@ ALLOWED_FILE_UPLOAD_EXTENSIONS = [
 ]
 
 # максимальный размер загружаемых файлов в Мб
-MAX_UPLOADED_FILE_SIZE = 1
+MAX_UPLOADED_FILE_SIZE = int(os.getenv("MAX_UPLOADED_FILE_SIZE") or 1)
+
+X_FRAME_OPTIONS = 'SAMEORIGIN'
