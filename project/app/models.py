@@ -94,7 +94,7 @@ class Discipline(models.Model):
     """
     name = models.CharField(max_length=255, verbose_name='Наименование')
     type = models.ForeignKey(DisciplineType, on_delete=models.PROTECT, verbose_name='Форма контроля знаний')
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Преподаватель')
+    users = models.ManyToManyField(User, verbose_name='Преподаватели', blank=True)
     groups = models.ManyToManyField(Group, verbose_name='Учебные группы', blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')

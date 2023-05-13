@@ -46,11 +46,11 @@ class FosDocumentAdminInline(admin.StackedInline):
         if request.user.is_superuser or not obj:
             return True
         if isinstance(obj, Discipline):
-            return obj.user and obj.user.id == request.user.id
+            return obj.users and obj.users.filter(id=request.user.id).exists()
         if isinstance(obj, Fos):
-            return obj.discipline.user and obj.discipline.user.id == request.user.id
+            return obj.discipline.users and obj.discipline.users.filter(id=request.user.id).exists()
         if isinstance(obj, Document):
-            return obj.fos.discipline.user and obj.fos.discipline.user.id == request.user.id
+            return obj.fos.discipline.users and obj.fos.discipline.users.filter(id=request.user.id).exists()
         return True
 
     def has_change_permission(self, request, obj):
@@ -92,7 +92,7 @@ class OwnFosListFilter(admin.SimpleListFilter):
             Логика применения фильтра
         """
         if self.value() == '1':
-            return queryset.filter(discipline__user=request.user)
+            return queryset.filter(discipline__users__id=request.user.id)
         return queryset
 
 
@@ -106,7 +106,7 @@ class FosAdmin(AdminFiltersMixin, admin.ModelAdmin):
     list_select_related = ('type', 'discipline')
 
     search_fields = (
-        'name', 'description', 'discipline__name', 'discipline__fos__document__name', 'discipline__fos__name'
+        'name', 'description', 'discipline__name'
     )
     inlines = (FosDocumentAdminInline, )
 
@@ -145,7 +145,7 @@ class FosAdmin(AdminFiltersMixin, admin.ModelAdmin):
         form = super(FosAdmin, self).get_form(request, obj, **kwargs)
         if not request.user.is_superuser and ('discipline' in form.base_fields):
             # позволяем выбрать пользователю только свои дисциплины при добавлении ФОСа
-            form.base_fields['discipline'].queryset = Discipline.objects.filter(user=request.user)
+            form.base_fields['discipline'].queryset = Discipline.objects.filter(users__id=request.user.id)
         return form
 
     def has_permissions_to(self, request, obj=None):
@@ -154,7 +154,7 @@ class FosAdmin(AdminFiltersMixin, admin.ModelAdmin):
         """
         # разрешаем доступ только супер-администратору или если дисциплина ФОСа принадлежит пользователю
         return request.user.is_superuser or \
-            (obj and obj.discipline and obj.discipline.user and obj.discipline.user.id == request.user.id)
+            (obj and obj.discipline and obj.discipline.users and obj.discipline.users.filter(id=request.user.id))
 
     def has_change_permission(self, request, obj=None):
         """
@@ -168,22 +168,19 @@ class FosAdmin(AdminFiltersMixin, admin.ModelAdmin):
         """
         return self.has_permissions_to(request, obj)
 
-    def get_readonly_fields(self, request, obj):
+    def has_add_permission(self, request, obj=None):
         """
-           Описание логики блокировки полей на форме
+           Может ли пользователь добавлять ФОС
         """
-        # блокируем поля на форме если у пользователя нет прав доступа
-        if self.has_permissions_to(request, obj):
-            return []
-        return ['discipline', 'name', 'description', 'type']
+        return True
 
     def get_list_filter(self, request):
         """
            Описание логики формирования доступного набора фильтров на странице списка
         """
         if not request.user.is_superuser:
-            return [OwnFosListFilter, 'discipline', 'type', 'discipline__user', 'discipline__groups']
-        return ['discipline', 'type', 'discipline__user', 'discipline__groups']
+            return [OwnFosListFilter, 'discipline', 'type', 'discipline__users', 'discipline__groups']
+        return ['discipline', 'type', 'discipline__users', 'discipline__groups']
 
     def changelist_view(self, request, extra_context=None):
         """
@@ -228,11 +225,11 @@ class DocumentAdminStackedInline(nested_admin.NestedStackedInline):
         if request.user.is_superuser or not obj:
             return True
         if isinstance(obj, Discipline):
-            return obj.user and obj.user.id == request.user.id
+            return obj.users and obj.users.filter(id=request.user.id)
         if isinstance(obj, Fos):
-            return obj.discipline.user and obj.discipline.user.id == request.user.id
+            return obj.discipline.users and obj.discipline.users.filter(id=request.user.id)
         if isinstance(obj, Document):
-            return obj.fos.discipline.user and obj.fos.discipline.user.id == request.user.id
+            return obj.fos.discipline.users and obj.fos.discipline.users.filter(id=request.user.id)
         return True
 
     def has_change_permission(self, request, obj):
@@ -267,7 +264,7 @@ class FosAdminInline(nested_admin.NestedStackedInline):
             Описание прав доступа к сущности
         """
         # разрешаем доступ только супер-администратору или если дисциплина ФОСа принадлежит пользователю
-        return request.user.is_superuser or (obj and obj.user and obj.user.id == request.user.id)
+        return request.user.is_superuser or (obj and obj.users and obj.users.filter(id=request.user.id))
 
     def has_change_permission(self, request, obj):
         """
@@ -308,7 +305,7 @@ class OwnDisciplineListFilter(admin.SimpleListFilter):
             Логика применения фильтра
         """
         if self.value() == '1':
-            return queryset.filter(user=request.user)
+            return queryset.filter(users__id=request.user.id)
         return queryset
 
 
@@ -328,14 +325,14 @@ class DisciplineAdmin(nested_admin.NestedModelAdmin):
         # блокируем все поля на форме если пользователь не супер-админ
         if request.user.is_superuser:
             return []
-        return ['name', 'type', 'user', 'groups']
+        return ['name', 'type', 'users', 'groups']
 
     def has_change_permission(self, request, obj=None):
         """
            Может ли пользователь изменять дисциплину
         """
         # разрешаем работу только со своими дисциплинами или если юзер - супер-админ
-        return (obj and obj.user and request.user.id == obj.user.id) or request.user.is_superuser
+        return (obj and obj.users and obj.users.filter(id=request.user.id).exists()) or request.user.is_superuser
 
     def lookup_allowed(self, lookup, value):
         """
@@ -359,16 +356,30 @@ class DisciplineAdmin(nested_admin.NestedModelAdmin):
                 request.META['QUERY_STRING'] = request.GET.urlencode()
         return super(DisciplineAdmin, self).changelist_view(request, extra_context=extra_context)
 
+    def get_groups(self, obj):
+        return ", ".join([g.name for g in obj.groups.all()])
+    get_groups.short_description = 'Группы'
+
+    def get_users(self, obj):
+        names = []
+        for u in obj.users.all():
+            if u.first_name or u.last_name:
+                names.append(u.first_name + " " + u.last_name)
+            else:
+                names.append(u.username)
+        return ", ".join(names)
+    get_users.short_description = 'Преподаватели'
+
     def get_list_display(self, request):
         """
             Поля отображаемые в списке
         """
-        return ['name', 'type', 'user', 'created_at', 'updated_at']
+        return ['name', 'type', 'get_users', 'get_groups', 'created_at', 'updated_at']
 
     def get_list_filter(self, request):
         """
            Описание логики формирования доступного набора фильтров на странице списка
         """
         if not request.user.is_superuser:
-            return [OwnDisciplineListFilter, 'type', 'user', 'groups', 'groups__course']
-        return ['type', 'user', 'groups', 'groups__course']
+            return [OwnDisciplineListFilter, 'type', 'users', 'groups', 'groups__course']
+        return ['type', 'users', 'groups', 'groups__course']
