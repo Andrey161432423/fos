@@ -10,6 +10,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         self.stdout.write('Заполнение базы данных значениями по-умолчанию...')
 
+        # если типов ФОСов еще не было в БД - создаем список по-умолчанию
         if FosType.objects.all().count() == 0:
             for fos_type in (
                 'Вопросы к зачету / экзамену',
@@ -24,6 +25,7 @@ class Command(BaseCommand):
             ):
                 FosType(name=fos_type).save()
 
+        # если типов дисциплин еще не было в БД - создаем список по-умолчанию
         if DisciplineType.objects.all().count() == 0:
             for dis_type in (
                 'Зачет',
@@ -31,13 +33,14 @@ class Command(BaseCommand):
             ):
                 DisciplineType(name=dis_type).save()
 
+        # если группы преподаватель не существует - создаем такую и выдаем соответствующие права
         if Group.objects.filter(name='Преподаватель').count() == 0:
             teacher = Group(name='Преподаватель')
             teacher.save()
             for permission in (
                 'add_fos', 'change_fos', 'delete_fos', 'view_fos',
                 'add_document', 'change_document', 'delete_document', 'view_document',
-                'add_discipline', 'change_discipline', 'delete_discipline', 'view_discipline',
+                'change_discipline', 'view_discipline'
             ):
                 teacher.permissions.add(
                     Permission.objects.get(codename=permission)
