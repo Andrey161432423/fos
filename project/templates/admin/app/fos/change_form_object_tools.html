@@ -1,0 +1,44 @@
+{% extends "admin/change_form_object_tools.html" %}
+{% load i18n admin_urls %}
+{% block object-tools-items %}
+<li>
+    <a href="{% url 'merge_documents' original.pk %}" id="merge-documents-button" style="background-color:#d79d41">
+        <svg width="16px" height="16px" viewBox="0 0 22 22" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" id="svg2" version="1.1" inkscape:version="0.92.1 r15371" sodipodi:docname="dark_merge-layer-below.svg">
+<sodipodi:namedview id="base" pagecolor="white" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="11.534679" inkscape:cx="-5.3181893" inkscape:cy="10.463133" inkscape:document-units="px" inkscape:current-layer="layer2" showgrid="true" units="px" borderlayer="true" inkscape:showpageshadow="false" inkscape:window-width="1884" inkscape:window-height="1051" inkscape:window-x="0" inkscape:window-y="0" inkscape:window-maximized="1">
+<sodipodi:guide position="2,20.000017" orientation="18,0" id="guide4066" inkscape:locked="false"/>
+<sodipodi:guide position="2,2.0000174" orientation="0,18" id="guide4068" inkscape:locked="false"/>
+<sodipodi:guide position="20,2.0000174" orientation="-18,0" id="guide4070" inkscape:locked="false"/>
+<sodipodi:guide position="20,20.000017" orientation="0,-18" id="guide4072" inkscape:locked="false"/>
+<sodipodi:guide position="3,19.000017" orientation="16,0" id="guide4074" inkscape:locked="false"/>
+<sodipodi:guide position="3,3.0000174" orientation="0,16" id="guide4076" inkscape:locked="false"/>
+<sodipodi:guide position="19,3.0000174" orientation="-16,0" id="guide4078" inkscape:locked="false"/>
+<sodipodi:guide position="19,19.000017" orientation="0,-16" id="guide4080" inkscape:locked="false"/>
+<inkscape:grid type="xygrid" id="grid4101"/>
+<sodipodi:guide position="8,19.000017" orientation="0,-5" id="guide4124" inkscape:locked="false"/>
+<sodipodi:guide position="11,3.0000174" orientation="0,4" id="guide4241" inkscape:locked="false"/>
+</sodipodi:namedview>
+<g inkscape:label="Calque 1" inkscape:groupmode="layer" id="layer1" transform="translate(0 -1030.362)">
+<g inkscape:label="Layer 1" id="layer2" transform="translate(-5 1025.362)">
+<path style="fill:white;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="M14 7h4v4h3l-5 6-5-6h3z" id="path4523" inkscape:connector-curvature="0"/>
+<path style="fill:white;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="M13 17h12l-6 5H7z" id="path4525" inkscape:connector-curvature="0" sodipodi:nodetypes="ccccc"/>
+<path style="fill:white;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="m8 15-6 5h12l6-5H8zm.209 1h9.082l-3.75 3H4.459l3.75-3z" transform="translate(5 5)" id="path4525-5"/>
+</g>
+</g>
+</svg><span style="padding-left:5px;">ОБЪЕДИНИТЬ ДОКУМЕНТЫ</span></a>
+</li>
+<li>
+    {% url opts|admin_urlname:'history' original.pk|admin_urlquote as history_url %}
+    <a href="{% add_preserved_filters history_url %}" class="historylink">{% translate "History" %}</a>
+</li>
+{% if has_absolute_url %}<li><a href="{{ absolute_url }}" class="viewsitelink">{% translate "View on site" %}</a></li>{% endif %}
+
+<script>
+    let mergeButton = document.getElementById('merge-documents-button');
+    mergeButton.onclick = function(e) {
+        let accepted = confirm("Все валидные MS Word документы будут объединены в один документ, который отправится на скачивание. Остальные файлы будут проигнорированы. Продолжить?");
+        if (!accepted) {
+            e.preventDefault();
+        }
+    }
+</script>
+{% endblock %}

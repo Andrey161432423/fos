@@ -1,4 +1,3 @@
-from adminfilters.autocomplete import AutoCompleteFilter
 from adminfilters.mixin import AdminFiltersMixin
 from django.contrib import admin
 from .models import *
