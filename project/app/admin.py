@@ -31,6 +31,7 @@ class QualificationAdmin(admin.ModelAdmin):
     search_fields = ['name']
 
     def get_queryset(self, request):
+        # добавляем объект request в объект self, для доступа к нему из любой функции данного класса
         qs = super(QualificationAdmin, self).get_queryset(request)
         self.request = request
         return qs
@@ -44,6 +45,9 @@ class QualificationAdmin(admin.ModelAdmin):
         return ['view_disciplines_link']
 
     def view_disciplines_link(self, obj):
+        """
+            Логика отображения страницы списка квалификаций для преподавателей
+        """
         total = obj.discipline_set.count()
         own = obj.discipline_set.filter(users__id=self.request.user.id).count()
         url = (
@@ -51,17 +55,25 @@ class QualificationAdmin(admin.ModelAdmin):
                 + "?"
                 + urlencode({"qualification__id__exact": f"{obj.id}"})
         )
+        # выводим в одну колонку название квалификации, количество дисциплин закрепленных за преподавателем
+        # и общее кол-во дисциплин этого вида обучения
+        # например: "Бакалавриат (3 дисциплины) всего 10"
         return format_html('<a href="{}">'+obj.name+' ({} '+ru_plural(own, ["дисциплина", "дисциплины", "дисциплин"])
                            + ')</a> <i>всего: {}</i>', url, own, total)
     view_disciplines_link.short_description = "Вид обучения"
 
     def view_disciplines_link_admin(self, obj):
+        """
+            Логика отображения страницы списка квалификаций для администратора
+        """
         count = obj.discipline_set.count()
         url = (
                 reverse("admin:app_discipline_changelist")
                 + "?"
                 + urlencode({"qualification__id__exact": f"{obj.id}"})
         )
+        # выводим 2 колонки: название квалификации и ссылку на страницу со списком квалификаций
+        # например: "Бакалавриат - Перейти (3)"
         return format_html('<a href="{}">Перейти ({})</a>', url, count)
     view_disciplines_link_admin.short_description = "Дисциплины"
 
