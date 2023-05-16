@@ -81,6 +81,23 @@ class Group(models.Model):
         verbose_name_plural = 'Учебные группы'
 
 
+class Qualification(models.Model):
+    """
+    Модель "Вид обучения, квалификация (бакалавриат, магистратура, ...)"
+
+    Attributes:
+        name: Наименование
+    """
+    name = models.CharField(max_length=255, verbose_name='Наименование')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Вид обучения (квалификация)'
+        verbose_name_plural = 'Виды обучения (квалификация)'
+
+
 class Discipline(models.Model):
     """
     Модель "Учебная дисциплина"
@@ -96,6 +113,8 @@ class Discipline(models.Model):
     type = models.ForeignKey(DisciplineType, on_delete=models.PROTECT, verbose_name='Форма контроля знаний')
     users = models.ManyToManyField(User, verbose_name='Преподаватели', blank=True)
     groups = models.ManyToManyField(Group, verbose_name='Учебные группы', blank=True)
+    qualification = models.ForeignKey(Qualification, blank=True, null=True, on_delete=models.PROTECT,
+                                      verbose_name='Вид обучения')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
 

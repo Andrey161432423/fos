@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from app.models import FosType, DisciplineType
+from app.models import FosType, DisciplineType, Qualification
 from django.contrib.auth.models import Group, Permission
 
 
@@ -33,6 +33,14 @@ class Command(BaseCommand):
             ):
                 DisciplineType(name=dis_type).save()
 
+        # если видов обучения (квалификаций) еще не было в БД - создаем список по-умолчанию
+        if Qualification.objects.all().count() == 0:
+            for qualification in (
+                'Бакалавриат',
+                'Магистратура',
+            ):
+                Qualification(name=qualification).save()
+
         # если группы преподаватель не существует - создаем такую и выдаем соответствующие права
         if Group.objects.filter(name='Преподаватель').count() == 0:
             teacher = Group(name='Преподаватель')
@@ -40,7 +48,7 @@ class Command(BaseCommand):
             for permission in (
                 'add_fos', 'change_fos', 'delete_fos', 'view_fos',
                 'add_document', 'change_document', 'delete_document', 'view_document',
-                'change_discipline', 'view_discipline'
+                'change_discipline', 'view_discipline', 'view_qualification'
             ):
                 teacher.permissions.add(
                     Permission.objects.get(codename=permission)

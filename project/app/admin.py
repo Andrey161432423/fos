@@ -2,7 +2,10 @@ from adminfilters.mixin import AdminFiltersMixin
 from django.contrib import admin
 from .models import *
 import nested_admin
-from django.utils.html import mark_safe
+from django.utils.html import mark_safe, format_html
+from django.urls import reverse
+from django.utils.http import urlencode
+from .utils import ru_plural
 
 admin.site.site_header = 'Цифровой фонд оценочных средств'
 admin.site.index_title = 'Администрирование'
@@ -18,6 +21,49 @@ class GroupAdmin(admin.ModelAdmin):
     list_display_links = ['name']
     search_fields = ['name']
     list_filter = ['course']
+
+
+@admin.register(Qualification)
+class QualificationAdmin(admin.ModelAdmin):
+    """
+        Класс отвечает за логику управления сущностью "вид обучения, квалификация"
+    """
+    search_fields = ['name']
+
+    def get_queryset(self, request):
+        qs = super(QualificationAdmin, self).get_queryset(request)
+        self.request = request
+        return qs
+
+    def get_list_display(self, request):
+        """
+            Поля отображаемые в списке
+        """
+        if request.user.is_superuser:
+            return ['name', 'view_disciplines_link_admin']
+        return ['view_disciplines_link']
+
+    def view_disciplines_link(self, obj):
+        total = obj.discipline_set.count()
+        own = obj.discipline_set.filter(users__id=self.request.user.id).count()
+        url = (
+                reverse("admin:app_discipline_changelist")
+                + "?"
+                + urlencode({"qualification__id__exact": f"{obj.id}"})
+        )
+        return format_html('<a href="{}">'+obj.name+' ({} '+ru_plural(own, ["дисциплина", "дисциплины", "дисциплин"])
+                           + ')</a> <i>всего: {}</i>', url, own, total)
+    view_disciplines_link.short_description = "Вид обучения"
+
+    def view_disciplines_link_admin(self, obj):
+        count = obj.discipline_set.count()
+        url = (
+                reverse("admin:app_discipline_changelist")
+                + "?"
+                + urlencode({"qualification__id__exact": f"{obj.id}"})
+        )
+        return format_html('<a href="{}">Перейти ({})</a>', url, count)
+    view_disciplines_link_admin.short_description = "Дисциплины"
 
 
 @admin.register(FosType)
@@ -314,7 +360,7 @@ class DisciplineAdmin(nested_admin.NestedModelAdmin):
         Класс отвечает за логику управления сущностью "Дисциплина"
     """
     list_display_links = ('name', )
-    search_fields = ['name', 'type__name', 'fos__document__name', 'fos__name']
+    search_fields = ['name', 'type__name', 'qualification__name', 'fos__document__name', 'fos__name']
     inlines = [FosAdminInline]
 
     def get_readonly_fields(self, request, obj):
@@ -324,7 +370,7 @@ class DisciplineAdmin(nested_admin.NestedModelAdmin):
         # блокируем все поля на форме если пользователь не супер-админ
         if request.user.is_superuser:
             return []
-        return ['name', 'type', 'users', 'groups']
+        return ['name', 'type', 'qualification', 'users', 'groups']
 
     def has_change_permission(self, request, obj=None):
         """
@@ -373,12 +419,12 @@ class DisciplineAdmin(nested_admin.NestedModelAdmin):
         """
             Поля отображаемые в списке
         """
-        return ['name', 'type', 'get_users', 'get_groups', 'created_at', 'updated_at']
+        return ['name', 'type', 'qualification', 'get_users', 'get_groups', 'created_at', 'updated_at']
 
     def get_list_filter(self, request):
         """
            Описание логики формирования доступного набора фильтров на странице списка
         """
         if not request.user.is_superuser:
-            return [OwnDisciplineListFilter, 'type', 'users', 'groups', 'groups__course']
-        return ['type', 'users', 'groups', 'groups__course']
+            return [OwnDisciplineListFilter, 'qualification', 'type', 'users', 'groups', 'groups__course']
+        return ['qualification', 'type', 'users', 'groups', 'groups__course']
