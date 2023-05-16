@@ -6,21 +6,100 @@ from django.utils.html import mark_safe, format_html
 from django.urls import reverse
 from django.utils.http import urlencode
 from .utils import ru_plural
+from import_export.admin import ImportExportModelAdmin
+from import_export.fields import Field
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin
+from import_export.admin import ExportMixin, ImportMixin
+from django.contrib.auth.models import Group as UserGroup
+from import_export import fields, resources
+from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 
 admin.site.site_header = 'Цифровой фонд оценочных средств'
 admin.site.index_title = 'Администрирование'
 admin.site.site_title = 'Цифровой фонд оценочных средств'
 
 
+class UserResource(resources.ModelResource):
+    """
+       Класс описывает логику импорта сущности "пользователь"
+    """
+    class Meta:
+        model = User
+        import_id_fields = ('username',)
+        fields = ('username', 'first_name', 'last_name')
+
+    def after_save_instance(self, instance, using_transactions, dry_run):
+        """
+            Событие "после сохранения"
+        """
+        # выставляем статус персонала и группу "преподаватели" по-умолчанию
+        instance.is_staff = True
+        instance.groups.add(
+            UserGroup.objects.first()
+        )
+        instance.save()
+
+
+# переопределяем django-класс админской сущности "пользователь"
+class CustomUserAdmin(ImportMixin, UserAdmin):
+    resource_class = UserResource
+    pass
+
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
+
+
+class GroupImportResource(resources.ModelResource):
+    """
+       Класс описывает логику импорта сущности "учебная группа"
+    """
+    class Meta:
+        model = Group
+        import_id_fields = ('name', )
+        fields = ('name', 'course')
+
+
+class GroupExportResource(resources.ModelResource):
+    """
+       Класс описывает логику экспорта сущности "учебная группа"
+    """
+    id_custom = Field(attribute='id', column_name='ID')
+    name_custom = Field(attribute='name', column_name='Наименование')
+    course_custom = Field(attribute='course', column_name='Курс')
+
+    class Meta:
+        model = Group
+        fields = ('id_custom', 'name_custom', 'course_custom')
+
+
 @admin.register(Group)
-class GroupAdmin(admin.ModelAdmin):
+class GroupAdmin(ImportExportModelAdmin):
     """
         Класс отвечает за логику управления сущностью "учебная группа"
     """
-    list_display = ['name', 'course']
+    list_display = ['name', 'course', 'view_disciplines_link']
     list_display_links = ['name']
     search_fields = ['name']
     list_filter = ['course']
+    resource_classes = [GroupImportResource, GroupExportResource]
+
+    def get_export_resource_class(self):
+        return GroupExportResource
+
+    def view_disciplines_link(self, obj):
+        """
+            Логика отображения колонки для перехода в список дисциплин группы
+        """
+        count = obj.discipline_set.count()
+        url = (
+                reverse("admin:app_discipline_changelist")
+                + "?"
+                + urlencode({"groups__id__exact": f"{obj.id}"})
+        )
+        return format_html('<a href="{}">Просмотр <b>({})</b></a>', url, count)
+    view_disciplines_link.short_description = "Дисциплины"
 
 
 @admin.register(Qualification)
@@ -243,7 +322,6 @@ class FosAdmin(AdminFiltersMixin, admin.ModelAdmin):
         """
            Описание логики представления списка
         """
-        extra_context = {'title': 'Список ФОСов дисциплин'}
 
         # устанавливаем для обычных пользователей фильтр "только мои ФОСы" по-умолчанию
         if 'HTTP_REFERER' in request.META and not request.user.is_superuser:
@@ -253,6 +331,30 @@ class FosAdmin(AdminFiltersMixin, admin.ModelAdmin):
                 q['fos_own'] = '1'
                 request.GET = q
                 request.META['QUERY_STRING'] = request.GET.urlencode()
+
+        title = 'Список ФОСов дисциплин'
+        if 'discipline__id__exact' in request.GET:
+            discipline = Discipline.objects.get(pk=request.GET['discipline__id__exact'])
+            title = discipline.name + ': ФОСы'
+        if 'type__id__exact' in request.GET:
+            fos_type = FosType.objects.get(pk=request.GET['type__id__exact'])
+            title = title + " (" + fos_type.name.lower() + ")"
+
+        if 'discipline__users__id__exact' in request.GET or ('fos_own' in request.GET and request.GET['fos_own'] == 1):
+            if 'fos_own' in request.GET and request.GET['fos_own'] == 1:
+                user = request.user
+            else:
+                user = User.objects.get(pk=request.GET['discipline__users__id__exact'])
+            if user.first_name or user.last_name:
+                username = user.first_name + " " + user.last_name
+            else:
+                username = user.username
+            title = "("+username+") " + title
+        elif 'discipline__groups__id__exact' in request.GET:
+            group = Group.objects.get(pk=request.GET['discipline__groups__id__exact'])
+            title = "(" + group.name.upper() + ") " + title
+
+        extra_context = {'title': title}
 
         return super(FosAdmin, self).changelist_view(request, extra_context=extra_context)
 
@@ -366,14 +468,55 @@ class OwnDisciplineListFilter(admin.SimpleListFilter):
         return queryset
 
 
+class DisciplineImportResource(resources.ModelResource):
+    """
+       Класс описывает логику импорта сущности "дисциплина"
+    """
+    name = Field(attribute='name', column_name='name')
+    type = fields.Field(
+        column_name='type', attribute='type',
+        widget=ForeignKeyWidget(DisciplineType, field='name')
+    )
+    qualification = fields.Field(
+        column_name='qualification', attribute='qualification',
+        widget=ForeignKeyWidget(Qualification, field='name')
+    )
+    users = fields.Field(
+        column_name='users', attribute='users',
+        widget=ManyToManyWidget(User, field='username', separator='|')
+    )
+    groups = fields.Field(
+        column_name='groups', attribute='groups',
+        widget=ManyToManyWidget(Group, field='name', separator='|')
+    )
+
+    class Meta:
+        model = Discipline
+        import_id_fields = ('name', )
+        fields = ('name', 'type', 'qualification', 'groups', 'users')
+
+
 @admin.register(Discipline)
-class DisciplineAdmin(nested_admin.NestedModelAdmin):
+class DisciplineAdmin(ImportMixin, nested_admin.NestedModelAdmin):
     """
         Класс отвечает за логику управления сущностью "Дисциплина"
     """
     list_display_links = ('name', )
     search_fields = ['name', 'type__name', 'qualification__name', 'fos__document__name', 'fos__name']
     inlines = [FosAdminInline]
+    resource_classes = [DisciplineImportResource]
+
+    def view_foses_link(self, obj):
+        """
+            Логика отображения колонки для перехода в список ФОСов
+        """
+        count = obj.fos_set.count()
+        if self.request.user.is_superuser:
+            url = (reverse("admin:app_fos_changelist") + "?" + urlencode({"discipline__id__exact": f"{obj.id}"}))
+        else:
+            url = (reverse("admin:app_fos_changelist") + "?" + urlencode({"discipline__id__exact": f"{obj.id}", "fos_own": 0}))
+        return format_html('<a href="{}">Просмотр <b>({})</b></a>', url, count)
+    view_foses_link.short_description = "ФОСы"
 
     def get_readonly_fields(self, request, obj):
         """
@@ -401,7 +544,6 @@ class DisciplineAdmin(nested_admin.NestedModelAdmin):
         """
            Описание логики представления списка
         """
-        extra_context = {'title': 'Список учебных дисциплин'}
 
         # устанавливаем для обычных пользователей фильтр "только мои дисциплины" по-умолчанию
         if 'HTTP_REFERER' in request.META and not request.user.is_superuser:
@@ -411,6 +553,27 @@ class DisciplineAdmin(nested_admin.NestedModelAdmin):
                 q['discipline_own'] = '1'
                 request.GET = q
                 request.META['QUERY_STRING'] = request.GET.urlencode()
+
+        title = 'Список учебных дисциплин'
+        if 'qualification__id__exact' in request.GET:
+            qualification = Qualification.objects.get(pk=request.GET['qualification__id__exact'])
+            title = "(" + qualification.name + ") " + title
+        if 'users__id__exact' in request.GET or ('discipline_own' in request.GET and request.GET['discipline_own'] == 1):
+            if 'discipline_own' in request.GET:
+                user = request.user
+            else:
+                user = User.objects.get(pk=request.GET['users__id__exact'])
+            if user.first_name or user.last_name:
+                username = user.first_name + " " + user.last_name
+            else:
+                username = user.username
+            title = title + " преподавателя " + username.lower()
+        elif 'groups__id__exact' in request.GET:
+            group = Group.objects.get(pk=request.GET['groups__id__exact'])
+            title = title + " группы " + group.name.upper()
+
+        extra_context = {'title': title}
+
         return super(DisciplineAdmin, self).changelist_view(request, extra_context=extra_context)
 
     def get_groups(self, obj):
@@ -431,7 +594,7 @@ class DisciplineAdmin(nested_admin.NestedModelAdmin):
         """
             Поля отображаемые в списке
         """
-        return ['name', 'type', 'qualification', 'get_users', 'get_groups', 'created_at', 'updated_at']
+        return ['name', 'type', 'qualification', 'get_users', 'get_groups', 'view_foses_link', 'created_at', 'updated_at']
 
     def get_list_filter(self, request):
         """
@@ -440,3 +603,9 @@ class DisciplineAdmin(nested_admin.NestedModelAdmin):
         if not request.user.is_superuser:
             return [OwnDisciplineListFilter, 'qualification', 'type', 'users', 'groups', 'groups__course']
         return ['qualification', 'type', 'users', 'groups', 'groups__course']
+
+    def get_queryset(self, request):
+        # добавляем объект request в объект self, для доступа к нему из любой функции данного класса
+        qs = super(DisciplineAdmin, self).get_queryset(request)
+        self.request = request
+        return qs

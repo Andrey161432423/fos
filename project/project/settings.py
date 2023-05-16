@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'adminfilters',
     'django_cleanup.apps.CleanupSelectedConfig',
     'nested_admin',
+    'import_export',
 ]
 
 MIDDLEWARE = [
@@ -159,3 +160,6 @@ ALLOWED_FILE_UPLOAD_EXTENSIONS = [
 MAX_UPLOADED_FILE_SIZE = int(os.getenv("MAX_UPLOADED_FILE_SIZE") or 1)
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+IMPORT_EXPORT_IMPORT_PERMISSION_CODE = 'ie_import'
+
