@@ -32,7 +32,12 @@ def export_fos(request):
         messages.add_message(request, messages.ERROR, 'У преподавателя нет дисциплин')
         return redirect('/admin/app/fos/')
 
-    if disciplines[0].fos_set.count() == 0:
+    all_fos_disc = []
+    for d in disciplines:
+        for f in d.fos_set.all():
+            all_fos_disc.append(f)
+
+    if len(all_fos_disc) == 0:
         messages.add_message(request, messages.ERROR, 'У преподавателя нет загруженных ФОСов')
         return redirect('/admin/app/fos/')
 
