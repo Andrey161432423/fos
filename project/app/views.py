@@ -56,6 +56,9 @@ def export_fos(request):
     worksheet.set_column(1, len(disciplines), 15)
 
     style_default = workbook.add_format({'border': 1})
+    style = workbook.add_format({
+        'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True
+    })
     col = 1
     count_fos = []
     # перебираем все дисциплины
@@ -81,9 +84,6 @@ def export_fos(request):
             worksheet.set_column(col, col, len(max(names, key=len)))
         else:
             # если ФОСов в пределах дисциплины нет - пишем прочерк
-            style = workbook.add_format({
-                'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True
-            })
             worksheet.write(row, col, '-', style)
         # переходим на следующую колонку
         col = col + 1
