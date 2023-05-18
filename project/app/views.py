@@ -26,7 +26,7 @@ def export_fos(request):
 
     # получаем преподавателя и все его дисциплины
     teacher = User.objects.get(pk=request.POST['teacher'])
-    disciplines = Discipline.objects.filter(users__in=request.POST['teacher'])
+    disciplines = Discipline.objects.filter(users__id=request.POST['teacher'])
 
     if disciplines.count() == 0:
         messages.add_message(request, messages.ERROR, 'У преподавателя нет дисциплин')
