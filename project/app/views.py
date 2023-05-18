@@ -28,6 +28,14 @@ def export_fos(request):
     teacher = User.objects.get(pk=request.POST['teacher'])
     disciplines = Discipline.objects.filter(users__in=request.POST['teacher'])
 
+    if disciplines.count() == 0:
+        messages.add_message(request, messages.ERROR, 'У преподавателя нет дисциплин')
+        return redirect('/admin/app/fos/')
+
+    if disciplines[0].fos_set.count() == 0:
+        messages.add_message(request, messages.ERROR, 'У преподавателя нет загруженных ФОСов')
+        return redirect('/admin/app/fos/')
+
     # создаем объект для работы с записью в excel файл
     output = BytesIO()
     workbook = xlsxwriter.Workbook(output)
