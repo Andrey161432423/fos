@@ -1,4 +1,5 @@
 from django import template
+from django.contrib.auth.models import User
 
 register = template.Library()
 
@@ -17,3 +18,8 @@ def ru_plural(value, variants):
         variant = 2
 
     return str(value) + " " + variants[variant]
+
+
+@register.simple_tag
+def get_users():
+    return User.objects.all()

@@ -105,7 +105,9 @@ class Discipline(models.Model):
     Attributes:
         name: Название
         type: Форма контроля знаний
-        user: Преподаватель
+        users: Преподаватели
+        groups: Учебные группы
+        qualification: Вид обучения
         created_at: Дата создания
         updated_at: дата изменения
     """

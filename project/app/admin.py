@@ -10,7 +10,7 @@ from import_export.admin import ImportExportModelAdmin
 from import_export.fields import Field
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
-from import_export.admin import ExportMixin, ImportMixin
+from import_export.admin import ExportMixin, ImportMixin, ExportActionMixin
 from django.contrib.auth.models import Group as UserGroup
 from import_export import fields, resources
 from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
@@ -83,7 +83,7 @@ class GroupAdmin(ImportExportModelAdmin):
     list_display_links = ['name']
     search_fields = ['name']
     list_filter = ['course']
-    resource_classes = [GroupImportResource, GroupExportResource]
+    resource_classes = [GroupImportResource]
 
     def get_export_resource_class(self):
         return GroupExportResource
@@ -496,8 +496,39 @@ class DisciplineImportResource(resources.ModelResource):
         fields = ('name', 'type', 'qualification', 'groups', 'users')
 
 
+class DisciplineExportResource(resources.ModelResource):
+    """
+       Класс описывает логику экспорта сущности "дисциплина"
+    """
+    name = Field(attribute='name', column_name='Дисциплина')
+    type = Field(attribute='type', column_name='Форма контроля знаний')
+    qualification = Field(attribute='qualification', column_name='Вид обучения')
+    users = Field(attribute='users', column_name='Преподаватель', widget=ManyToManyWidget(
+        User, field='username', separator=', '), default='-'
+    )
+    groups = Field(attribute='groups', column_name='Учебные группы', widget=ManyToManyWidget(
+        Group, field='name', separator=', '), default='-'
+    )
+    foses = Field(attribute='fos_set', column_name='Оценочные средства', widget=ManyToManyWidget(
+        Fos, field='name', separator=', '), default='-'
+    )
+
+    class Meta:
+        model = Discipline
+        fields = ('name', 'type', 'users', 'groups', 'foses')
+
+    def dehydrate_users(self, discipline):
+        out = []
+        for user in discipline.users.all():
+            if user.first_name or user.last_name:
+                out.append(user.first_name + " " + user.last_name)
+            else:
+                out.append(user.username)
+        return ", ".join(out)
+
+
 @admin.register(Discipline)
-class DisciplineAdmin(ImportMixin, nested_admin.NestedModelAdmin):
+class DisciplineAdmin(ImportExportModelAdmin, ExportActionMixin, nested_admin.NestedModelAdmin):
     """
         Класс отвечает за логику управления сущностью "Дисциплина"
     """
@@ -505,6 +536,10 @@ class DisciplineAdmin(ImportMixin, nested_admin.NestedModelAdmin):
     search_fields = ['name', 'type__name', 'qualification__name', 'fos__document__name', 'fos__name']
     inlines = [FosAdminInline]
     resource_classes = [DisciplineImportResource]
+    save_on_top = True
+
+    def get_export_resource_class(self):
+        return DisciplineExportResource
 
     def view_foses_link(self, obj):
         """

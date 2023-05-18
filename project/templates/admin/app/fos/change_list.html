@@ -1,0 +1,22 @@
+{% extends 'admin/change_list.html' %}
+
+{% block object-tools %}
+  <form action="{% url 'export_fos' %}" method="POST">
+    {% csrf_token %}
+    <select name="teacher" required>
+      {% load utils_tags %}
+      {% get_users as users %}
+      <option disabled selected>Преподаватель</option>
+      {% for user in users %}
+      {% if user.first_name or user.last_name %}
+      <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+      {% else %}
+      <option value="{{ user.id }}">{{ user.username }}</option>
+      {% endif %}
+      {% endfor %}
+    </select>
+    <input type="submit" value="Экспорт" />
+  </form>
+    <br>
+    {{ block.super }}
+{% endblock %}
