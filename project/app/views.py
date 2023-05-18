@@ -93,8 +93,12 @@ def export_fos(request):
         username = teacher.first_name + " " + teacher.last_name
     else:
         username = teacher.username
+
     # делаем эту ячейку по ширине равной самому большому кол-ву строк ФОСов в дисциплинах
-    worksheet.merge_range('A6:A' + str(5 + max(count_fos)), username, style)
+    if (5 + max(count_fos)) == 6:
+        worksheet.write('A6:A6', username, style)
+    else:
+        worksheet.merge_range('A6:A' + str(5 + max(count_fos)), username, style)
 
     # далее необходимо найти пустые ячейки в каждой колонке (где ФОСов нет)
     # объединить их и поставить прочерк
