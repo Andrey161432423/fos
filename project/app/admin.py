@@ -16,7 +16,7 @@ from import_export import fields, resources
 from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 
 admin.site.site_header = 'Цифровой фонд оценочных средств'
-admin.site.index_title = 'Администрирование'
+admin.site.index_title = 'Главное меню'
 admin.site.site_title = 'Цифровой фонд оценочных средств'
 
 
@@ -212,7 +212,7 @@ class OwnFosListFilter(admin.SimpleListFilter):
     """
         Класс отвечает за логику фильтра, отображающего только ФОСы пользователя
     """
-    title = 'Показать только мои ФОСы'
+    title = 'Показать только мои оценочные средства'
     parameter_name = 'fos_own'
 
     def lookups(self, request, model_admin):
@@ -220,7 +220,7 @@ class OwnFosListFilter(admin.SimpleListFilter):
             Варианты выбора в фильтре
         """
         return [
-            (1, 'да')
+            (1, 'Да')
         ]
 
     def queryset(self, request, queryset):
@@ -332,7 +332,7 @@ class FosAdmin(AdminFiltersMixin, admin.ModelAdmin):
                 request.GET = q
                 request.META['QUERY_STRING'] = request.GET.urlencode()
 
-        title = 'Список ФОСов дисциплин'
+        title = 'Список оценочных средств дисциплин'
         if 'discipline__id__exact' in request.GET:
             discipline = Discipline.objects.get(pk=request.GET['discipline__id__exact'])
             title = discipline.name + ': ФОСы'
@@ -456,7 +456,7 @@ class OwnDisciplineListFilter(admin.SimpleListFilter):
             Варианты выбора в фильтре
         """
         return [
-            (1, 'да')
+            (1, 'Да')
         ]
 
     def queryset(self, request, queryset):

@@ -31,8 +31,8 @@ class FosType(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = 'Тип ФОСа'
-        verbose_name_plural = 'Типы ФОСов'
+        verbose_name = 'Тип оценочного средства'
+        verbose_name_plural = 'Типы оценочного средства'
 
 
 class DisciplineType(models.Model):
@@ -77,7 +77,7 @@ class Group(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = 'Учебная группа'
+        verbose_name = 'учебную группу'
         verbose_name_plural = 'Учебные группы'
 
 
@@ -94,8 +94,8 @@ class Qualification(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = 'Вид обучения (квалификация)'
-        verbose_name_plural = 'Виды обучения (квалификация)'
+        verbose_name = 'Вид обучения'
+        verbose_name_plural = 'Виды обучения'
 
 
 class Discipline(models.Model):
@@ -148,11 +148,11 @@ class Fos(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
 
     def __str__(self):
-        return 'ФОС - ' + self.name
+        return 'Оценочное средство - ' + self.name
 
     class Meta:
-        verbose_name = 'ФОС'
-        verbose_name_plural = 'ФОСы'
+        verbose_name = 'оценочное средство'
+        verbose_name_plural = 'Оценочные средства'
 
 
 @cleanup.select
@@ -171,7 +171,7 @@ class Document(models.Model):
     path = models.FileField(upload_to='documents/', blank=True, null=True, verbose_name='Документ', validators=[
         FileExtensionValidator(settings.ALLOWED_FILE_UPLOAD_EXTENSIONS), validate_file_size
     ], help_text='Допустимые расширения: ' + ', '.join(settings.ALLOWED_FILE_UPLOAD_EXTENSIONS))
-    fos = models.ForeignKey(Fos, on_delete=models.CASCADE, verbose_name='ФОС')
+    fos = models.ForeignKey(Fos, on_delete=models.CASCADE, verbose_name='Оценочное средство')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
 
