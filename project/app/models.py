@@ -94,7 +94,7 @@ class Qualification(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = 'Вид обучения'
+        verbose_name = 'вид обучения'
         verbose_name_plural = 'Виды обучения'
 
 

@@ -192,7 +192,7 @@ def export_fos(request):
     total_format = workbook.add_format({
         'align': 'center', 'valign': 'vcenter', 'border': 1, 'bold': True
     })
-    worksheet.write(row, 0, 'Всего', total_format)
+    worksheet.write(row, 0, 'Всего оценочных средств', total_format)
     # worksheet.write_formula(row, 1, '=SUM(B16:B'+str(row)+')', total_format)
     worksheet.write(row, 1, all_total, total_format)
 
