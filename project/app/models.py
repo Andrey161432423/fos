@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django_cleanup import cleanup
+import datetime
 
 
 # валидация размера файла
@@ -139,11 +140,17 @@ class Fos(models.Model):
             discipline: Дисциплина
             created_at: Дата создания
             updated_at: дата изменения
-        """
+    """
+
+    YEARS_CHOICES = [
+        (str(y), str(y) + " - " + str(y + 1)) for y in reversed(range(2000, datetime.date.today().year + 1))
+    ]
+
     name = models.CharField(max_length=255, verbose_name='Наименование')
     description = models.TextField(verbose_name='Описание', blank=True, null=True)
     type = models.ForeignKey(FosType, on_delete=models.PROTECT, verbose_name='Тип')
     discipline = models.ForeignKey(Discipline, on_delete=models.PROTECT, verbose_name='Дисциплина')
+    years = models.CharField(max_length=20, blank=True, null=True, choices=YEARS_CHOICES, verbose_name='Период обучения')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
 

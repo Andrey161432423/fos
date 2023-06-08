@@ -60,10 +60,13 @@ def export_fos(request):
     # добавляем заголовочные строки таблицы
     worksheet.merge_range('A4:A5', 'Преподаватель', header)
     # формируем заголовок "дисциплины" (3 строка и объединяем столько колонок - сколько дисциплин)
-    worksheet.merge_range(
-        first_row=3, first_col=1, last_row=3, last_col=len(disciplines),
-        data='Дисциплины', cell_format=header
-    )
+    if len(disciplines) == 1:
+        worksheet.write(3, 1, 'Дисциплины', header)
+    else:
+        worksheet.merge_range(
+            first_row=3, first_col=1, last_row=3, last_col=len(disciplines),
+            data='Дисциплины', cell_format=header
+        )
     worksheet.set_column(0, 0, 25)
     worksheet.set_column(1, len(disciplines), 15)
 

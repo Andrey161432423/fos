@@ -19,6 +19,9 @@ admin.site.site_header = 'Цифровой фонд оценочных сред�
 admin.site.index_title = 'Главное меню'
 admin.site.site_title = 'Цифровой фонд оценочных средств'
 
+User.get_short_name = lambda user_instance: (user_instance.last_name + " " + user_instance.first_name) \
+    if user_instance.last_name or user_instance.first_name else user_instance.username
+
 
 class UserResource(resources.ModelResource):
     """
@@ -232,6 +235,32 @@ class OwnFosListFilter(admin.SimpleListFilter):
         return queryset
 
 
+class DisTeachersListFilter(admin.SimpleListFilter):
+    """
+        Класс отвечает за логику фильтра "преподаватель через дисциплину"
+    """
+    title = "Преподаватель"
+    parameter_name = 'teacher'
+
+    def lookups(self, request, model_admin):
+        """
+            Варианты выбора в фильтре
+        """
+        users = []
+        for u in User.objects.all():
+            name = u.last_name + " " + u.first_name if u.last_name or u.first_name else u.username
+            users.append((u.id, name))
+        return users
+
+    def queryset(self, request, queryset):
+        """
+            Логика применения фильтра
+        """
+        if not self.value():
+            return queryset
+        return queryset.filter(discipline__users__id=self.value())
+
+
 @admin.register(Fos)
 class FosAdmin(AdminFiltersMixin, admin.ModelAdmin):
     """
@@ -315,8 +344,8 @@ class FosAdmin(AdminFiltersMixin, admin.ModelAdmin):
            Описание логики формирования доступного набора фильтров на странице списка
         """
         if not request.user.is_superuser:
-            return [OwnFosListFilter, 'discipline', 'type', 'discipline__users', 'discipline__groups']
-        return ['discipline', 'type', 'discipline__users', 'discipline__groups']
+            return [OwnFosListFilter, 'years', 'discipline', 'type', DisTeachersListFilter, 'discipline__groups']
+        return ['years', 'discipline', 'type', DisTeachersListFilter, 'discipline__groups']
 
     def changelist_view(self, request, extra_context=None):
         """
@@ -340,11 +369,11 @@ class FosAdmin(AdminFiltersMixin, admin.ModelAdmin):
             fos_type = FosType.objects.get(pk=request.GET['type__id__exact'])
             title = title + " (" + fos_type.name.lower() + ")"
 
-        if 'discipline__users__id__exact' in request.GET or ('fos_own' in request.GET and request.GET['fos_own'] == 1):
+        if 'teacher' in request.GET or ('fos_own' in request.GET and request.GET['fos_own'] == 1):
             if 'fos_own' in request.GET and request.GET['fos_own'] == 1:
                 user = request.user
             else:
-                user = User.objects.get(pk=request.GET['discipline__users__id__exact'])
+                user = User.objects.get(pk=request.GET['teacher'])
             if user.first_name or user.last_name:
                 username = user.first_name + " " + user.last_name
             else:
@@ -442,6 +471,32 @@ class FosAdminInline(nested_admin.NestedStackedInline):
            Может ли пользователь удалять ФОС из дисциплины
         """
         return self.has_permissions_to(request, obj)
+
+
+class TeachersListFilter(admin.SimpleListFilter):
+    """
+        Класс отвечает за логику фильтра "преподаватель"
+    """
+    title = "Преподаватель"
+    parameter_name = 'teacher'
+
+    def lookups(self, request, model_admin):
+        """
+            Варианты выбора в фильтре
+        """
+        users = []
+        for u in User.objects.all():
+            name = u.last_name + " " + u.first_name if u.last_name or u.first_name else u.username
+            users.append((u.id, name))
+        return users
+
+    def queryset(self, request, queryset):
+        """
+            Логика применения фильтра
+        """
+        if not self.value():
+            return queryset
+        return queryset.filter(users__id=self.value())
 
 
 class OwnDisciplineListFilter(admin.SimpleListFilter):
@@ -593,11 +648,11 @@ class DisciplineAdmin(ImportExportModelAdmin, ExportActionMixin, nested_admin.Ne
         if 'qualification__id__exact' in request.GET:
             qualification = Qualification.objects.get(pk=request.GET['qualification__id__exact'])
             title = "(" + qualification.name + ") " + title
-        if 'users__id__exact' in request.GET or ('discipline_own' in request.GET and request.GET['discipline_own'] == 1):
+        if 'teacher' in request.GET or ('discipline_own' in request.GET and request.GET['discipline_own'] == 1):
             if 'discipline_own' in request.GET:
                 user = request.user
             else:
-                user = User.objects.get(pk=request.GET['users__id__exact'])
+                user = User.objects.get(pk=request.GET['teacher'])
             if user.first_name or user.last_name:
                 username = user.first_name + " " + user.last_name
             else:
@@ -636,8 +691,8 @@ class DisciplineAdmin(ImportExportModelAdmin, ExportActionMixin, nested_admin.Ne
            Описание логики формирования доступного набора фильтров на странице списка
         """
         if not request.user.is_superuser:
-            return [OwnDisciplineListFilter, 'qualification', 'type', 'users', 'groups', 'groups__course']
-        return ['qualification', 'type', 'users', 'groups', 'groups__course']
+            return [OwnDisciplineListFilter, 'qualification', 'type', TeachersListFilter, 'groups', 'groups__course']
+        return ['qualification', 'type', TeachersListFilter, 'groups', 'groups__course']
 
     def get_queryset(self, request):
         # добавляем объект request в объект self, для доступа к нему из любой функции данного класса

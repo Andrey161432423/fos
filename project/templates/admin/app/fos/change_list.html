@@ -3,19 +3,23 @@
 {% block object-tools %}
   <form action="{% url 'export_fos' %}" method="POST">
     {% csrf_token %}
+    {% if user.is_superuser %}
     <select name="teacher" required>
       {% load utils_tags %}
       {% get_users as users %}
-      <option disabled selected>Преподаватель</option>
-      {% for user in users %}
-      {% if user.first_name or user.last_name %}
-      <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+      <option disabled selected>Выберите преподавателя</option>
+      {% for u in users %}
+      {% if u.first_name or u.last_name %}
+      <option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>
       {% else %}
-      <option value="{{ user.id }}">{{ user.username }}</option>
+      <option value="{{ u.id }}">{{ u.username }}</option>
       {% endif %}
       {% endfor %}
     </select>
-    <input type="submit" value="Экспорт" />
+    {% else %}
+    <input type="hidden" name="teacher" value="{{ user.id }}">
+    {% endif %}
+    <input style="padding: 7px 7px!important;" type="submit" value="Сформировать отчет" />
   </form>
     <br>
     {{ block.super }}
