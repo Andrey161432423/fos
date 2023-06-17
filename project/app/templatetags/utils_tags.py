@@ -1,6 +1,8 @@
 from django import template
 from django.contrib.auth.models import User
 
+from app.models import Fos
+
 register = template.Library()
 
 
@@ -23,3 +25,8 @@ def ru_plural(value, variants):
 @register.simple_tag
 def get_users():
     return User.objects.all()
+
+
+@register.simple_tag
+def get_years():
+    return Fos.YEARS_CHOICES

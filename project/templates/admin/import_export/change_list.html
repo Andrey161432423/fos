@@ -1,0 +1,22 @@
+{% extends 'admin/change_list.html' %}
+
+{% block object-tools %}
+{% if user.is_superuser and request.path == '/admin/app/discipline/' %}
+  <form action="{% url 'export_disciplines' %}" method="POST">
+    {% csrf_token %}
+    <select name="years" required>
+      {% load utils_tags %}
+      {% get_years as years %}
+      <option disabled selected>Выберите год обучения</option>
+      <option value="all">Все</option>
+      {% for y, year in years %}
+      <option value="{{ y }}">{{ year }}</option>
+      {% endfor %}
+    </select>
+
+    <input style="padding: 7px 7px!important;" type="submit" value="Сформировать отчет" />
+  </form>
+ {% endif %}
+    <br>
+    {{ block.super }}
+{% endblock %}

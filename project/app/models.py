@@ -3,6 +3,7 @@ from django.core.validators import FileExtensionValidator, MinValueValidator, Ma
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
+from django.urls import reverse
 from django_cleanup import cleanup
 import datetime
 
@@ -123,6 +124,11 @@ class Discipline(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_admin_url(self):
+        # the url to the Django admin form for the model instance
+        info = (self._meta.app_label, self._meta.model_name)
+        return reverse('admin:%s_%s_change' % info, args=(self.pk,))
 
     class Meta:
         verbose_name = 'Дисциплина'
